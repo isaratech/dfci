@@ -48,6 +48,45 @@ function fromLatLng(lat, lng) {
   return dfciFromLambert(x, y);
 }
 
+// Décodage d'un code DFCI, complet ou partiel (AA, AA00, AA00A0, AA00A0.5).
+// Renvoie { code, x, y, size } : code normalisé, coin sud-ouest Lambert et côté
+// de la case en mètres (le quadrant 1-5 correspond à une case de 1 km), ou null.
+function dfciToLambert(input) {
+  const s = String(input).toUpperCase().replace(/[\s.]/g, '');
+  const m = /^([A-Z])([A-Z])(?:(\d)(\d)(?:([A-Z])(\d)([1-5])?)?)?$/.exec(s);
+  if (!m) return null;
+  const ix = LETTERS_100.indexOf(m[1]);
+  const iy = LETTERS_100.indexOf(m[2]) - 1;
+  if (ix < 0 || iy < 0) return null;
+  let x = ix * 100000;
+  let y = BOUNDS.minY + iy * 100000;
+  let size = 100000;
+  let code = m[1] + m[2];
+  if (m[3]) {
+    if (m[3] % 2 || m[4] % 2) return null; // pas de 20 km : chiffres pairs uniquement
+    x += (m[3] / 2) * 20000;
+    y += (m[4] / 2) * 20000;
+    size = 20000;
+    code += m[3] + m[4];
+  }
+  if (m[5]) {
+    const kx = LETTERS_2.indexOf(m[5]);
+    if (kx < 0) return null;
+    x += kx * 2000;
+    y += m[6] * 2000;
+    size = 2000;
+    code += m[5] + m[6];
+  }
+  if (m[7]) {
+    const q = +m[7]; // 1=NO, 2=NE, 3=SE, 4=SO, 5=centre
+    size = 1000;
+    if (q === 5) { x += 500; y += 500; }
+    else { x += q === 2 || q === 3 ? 1000 : 0; y += q === 1 || q === 2 ? 1000 : 0; }
+    code += '.' + m[7];
+  }
+  return { code, x, y, size };
+}
+
 // Étiquette d'une cellule de la grille selon son pas (100 km, 20 km ou 2 km)
 function cellLabel(cx, cy, step) {
   const code = dfciFromLambert(cx, cy);
@@ -55,7 +94,7 @@ function cellLabel(cx, cy, step) {
   return code.slice(0, step >= 100000 ? 2 : step >= 20000 ? 4 : 6);
 }
 
-const DFCI = { BOUNDS, toLambert, toLatLng, dfciFromLambert, fromLatLng, cellLabel };
+const DFCI = { BOUNDS, toLambert, toLatLng, dfciFromLambert, dfciToLambert, fromLatLng, cellLabel };
 
 if (typeof module !== 'undefined') module.exports = DFCI;
 if (typeof window !== 'undefined') window.DFCI = DFCI;
