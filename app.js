@@ -2,10 +2,39 @@
 
 const map = L.map('map').setView([46.6, 2.6], 6);
 
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-}).addTo(map);
+// --- Fonds de carte ---
+
+const GEOPF_WMTS =
+  'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
+  '&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}';
+
+const baseLayers = {
+  'Plan (OSM)': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }),
+  'Ortho IGN': L.tileLayer(GEOPF_WMTS + '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&FORMAT=image/jpeg', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.ign.fr/">IGN</a> / Géoplateforme',
+  }),
+  'SCAN 25 IGN': L.tileLayer(
+    GEOPF_WMTS.replace('/wmts?', '/private/wmts?') +
+      '&LAYER=GEOGRAPHICALGRIDSYSTEMS.SCAN25TOUR&FORMAT=image/jpeg&apikey=ign_scan_ws',
+    {
+      minZoom: 6,
+      maxZoom: 16,
+      attribution: '&copy; <a href="https://www.ign.fr/">IGN</a> / Géoplateforme',
+    }
+  ),
+  'OpenTopoMap': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    maxZoom: 17,
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, ' +
+      '<a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
+  }),
+};
+baseLayers['Plan (OSM)'].addTo(map);
+L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
 
 L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
 
@@ -111,6 +140,72 @@ function redrawGrid() {
 map.on('moveend zoomend', redrawGrid);
 redrawGrid();
 
+// --- Recherche inverse : code DFCI → case surlignée ---
+
+let highlight = null;
+
+function clearHighlight() {
+  if (highlight) { map.removeLayer(highlight); highlight = null; }
+}
+
+// Contour de la case en Lambert, échantillonné (les côtés sont courbes en Mercator)
+function cellOutline(x, y, size) {
+  const pts = [];
+  for (let j = 0; j < SEGMENTS; j++) pts.push(DFCI.toLatLng(x + (size * j) / SEGMENTS, y));
+  for (let j = 0; j < SEGMENTS; j++) pts.push(DFCI.toLatLng(x + size, y + (size * j) / SEGMENTS));
+  for (let j = 0; j < SEGMENTS; j++) pts.push(DFCI.toLatLng(x + size - (size * j) / SEGMENTS, y + size));
+  for (let j = 0; j < SEGMENTS; j++) pts.push(DFCI.toLatLng(x, y + size - (size * j) / SEGMENTS));
+  return pts;
+}
+
+function zoomForSize(size) {
+  return size <= 1000 ? 15 : size <= 2000 ? 14 : size <= 20000 ? 11 : 8;
+}
+
+// Centre la carte sur la case décodée et la surligne. Renvoie le code normalisé ou null.
+function showDFCI(input) {
+  const cell = DFCI.dfciToLambert(input);
+  if (!cell) return null;
+  clearHighlight();
+  highlight = L.polygon(cellOutline(cell.x, cell.y, cell.size), {
+    color: '#f9a825', weight: 3, fillColor: '#f9a825', fillOpacity: 0.18, interactive: false,
+  }).addTo(map);
+  map.setView(DFCI.toLatLng(cell.x + cell.size / 2, cell.y + cell.size / 2), zoomForSize(cell.size));
+  if (hint) hint.style.opacity = '0';
+  return cell.code;
+}
+
+const searchCtl = L.control({ position: 'topleft' });
+searchCtl.onAdd = () => {
+  const div = L.DomUtil.create('div', 'leaflet-bar dfci-search');
+  div.innerHTML =
+    '<form id="dfci-form">' +
+    '<input id="dfci-input" type="text" placeholder="Code DFCI (ex. KD42F7.5)" ' +
+    'autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9">' +
+    '<button type="submit" title="Rechercher">➜</button>' +
+    '</form>';
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
+  return div;
+};
+searchCtl.addTo(map);
+
+const searchForm = document.getElementById('dfci-form');
+const searchInput = document.getElementById('dfci-input');
+searchForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const val = searchInput.value.trim();
+  searchInput.classList.remove('invalid');
+  if (!val) { clearHighlight(); return; }
+  const code = showDFCI(val);
+  if (code) {
+    searchInput.value = code;
+    searchInput.blur();
+  } else {
+    searchInput.classList.add('invalid');
+  }
+});
+
 // --- Clic → coordonnées DFCI ---
 
 const hint = document.getElementById('hint');
@@ -121,7 +216,8 @@ map.on('click', (e) => {
   const content = code
     ? `<div class="dfci-code">${code}</div>` +
       `<div class="dfci-sub">${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}</div>` +
-      `<button class="dfci-copy" onclick="copyDFCI('${code}', this)">Copier la coordonnée</button>`
+      `<button class="dfci-copy" onclick="copyDFCI('${code}', this)">Copier la coordonnée</button>` +
+      `<button class="dfci-copy dfci-share" onclick="shareDFCI('${code}', ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}, this)">Partager</button>`
     : '<div class="dfci-sub">Hors zone DFCI</div>';
   L.popup().setLatLng(e.latlng).setContent(content).openOn(map);
 });
@@ -152,6 +248,37 @@ window.copyDFCI = (code, btn) => {
     legacyCopy(code) ? ok() : no();
   }
 };
+
+// --- Partage de position (Web Share, repli : copie du lien) ---
+
+function shareURL(code) {
+  return location.origin + location.pathname + '?c=' + encodeURIComponent(code);
+}
+
+window.shareDFCI = (code, lat, lng, btn) => {
+  const url = shareURL(code);
+  const text = `DFCI ${code} — ${lat}, ${lng}`;
+  if (navigator.share) {
+    navigator.share({ title: 'DFCI ' + code, text, url }).catch(() => {});
+  } else {
+    const ok = () => { btn.textContent = 'Lien copié ✓'; };
+    const no = () => { btn.textContent = 'Partage impossible'; };
+    const full = text + '\n' + url;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(full).then(ok, () => (legacyCopy(full) ? ok() : no()));
+    } else {
+      legacyCopy(full) ? ok() : no();
+    }
+  }
+};
+
+// --- Paramètres d'URL : ?c=KD42F7.5 centre la carte sur la case ---
+
+const urlCode = new URLSearchParams(location.search).get('c');
+if (urlCode) {
+  const code = showDFCI(urlCode);
+  if (code && searchInput) searchInput.value = code;
+}
 
 // --- Position GPS ---
 
