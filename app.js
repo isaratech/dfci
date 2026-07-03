@@ -307,7 +307,7 @@ locateCtl.onAdd = () => {
   btn = L.DomUtil.create('a', 'locate-btn', div);
   btn.href = '#';
   btn.title = 'Ma position';
-  btn.innerHTML = '◉';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>';
   L.DomEvent.on(btn, 'click', (e) => {
     L.DomEvent.stop(e);
     if (watching) { stopLocate(); return; }
