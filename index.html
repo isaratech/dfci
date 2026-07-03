@@ -34,6 +34,22 @@
       background: #b71c1c; border: 0; border-radius: 6px; padding: 8px 10px; cursor: pointer;
     }
     .dfci-copy:hover { background: #a01818; }
+    .dfci-share { background: #1565c0; }
+    .dfci-share:hover { background: #10509a; }
+    /* recherche inverse (code DFCI → case) */
+    .dfci-search { background: #fff; }
+    .dfci-search form { display: flex; }
+    .dfci-search input {
+      width: 150px; border: 0; outline: none; padding: 7px 9px;
+      font: 600 13px/1 ui-monospace, monospace; text-transform: uppercase;
+      background: transparent; border-radius: 4px 0 0 4px;
+    }
+    .dfci-search input.invalid { color: #b71c1c; background: #fdecea; }
+    .dfci-search button {
+      border: 0; border-left: 1px solid #ddd; padding: 0 10px; cursor: pointer;
+      font-size: 14px; color: #b71c1c; background: transparent; border-radius: 0 4px 4px 0;
+    }
+    .dfci-search button:hover { background: #f4f4f4; }
     /* position GPS */
     .dfci-pos { font: 700 12px/1 ui-monospace, monospace; color: #1565c0; }
     /* bouton localisation */
