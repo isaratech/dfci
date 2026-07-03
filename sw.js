@@ -1,6 +1,6 @@
 // Cache de l'app shell uniquement ; les tuiles OSM restent en réseau
 // (politique d'usage OSM + cache HTTP du navigateur).
-const CACHE = 'dfci-v4';
+const CACHE = 'dfci-v5';
 const ASSETS = [
   '.',
   'index.html',

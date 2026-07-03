@@ -12,33 +12,48 @@
   <link rel="stylesheet" href="vendor/leaflet.css">
   <style>
     html, body, #map { height: 100%; margin: 0; }
-    .dfci-label {
+    /* étiquettes de la grille (pastille lisible sur le fond de carte) */
+    .dfci-label, .dfci-zone {
       color: #b71c1c;
       font: 700 11px/1 ui-monospace, monospace;
-      text-shadow: 0 0 3px #fff, 0 0 3px #fff;
       white-space: nowrap;
+      padding: 2px 5px;
+      background: rgba(255, 255, 255, 0.82);
+      border-radius: 5px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
-    .dfci-zone {
-      color: #b71c1c;
-      font: 700 11px/1 ui-monospace, monospace;
-      text-shadow: 0 0 3px #fff, 0 0 3px #fff;
-      white-space: nowrap;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
+    .dfci-zone { font-size: 10px; padding: 1px 4px; }
+    /* popup au clic */
+    .dfci-code { font: 700 20px/1.2 ui-monospace, monospace; color: #b71c1c; letter-spacing: 0.5px; }
+    .dfci-sub { color: #666; font-size: 12px; margin-top: 3px; }
+    .dfci-copy {
+      margin-top: 10px; width: 100%;
+      font: 600 12px/1 system-ui, sans-serif; color: #fff;
+      background: #b71c1c; border: 0; border-radius: 6px; padding: 8px 10px; cursor: pointer;
     }
-    .dfci-code { font: 700 18px/1.4 ui-monospace, monospace; }
-    .dfci-sub { color: #666; font-size: 12px; }
-    .dfci-pos { font: 700 12px/1 ui-monospace, monospace; }
+    .dfci-copy:hover { background: #a01818; }
+    /* position GPS */
+    .dfci-pos { font: 700 12px/1 ui-monospace, monospace; color: #1565c0; }
+    /* bouton localisation */
     .locate-btn { font-size: 18px; }
     .locate-btn.active { color: #1565c0; }
     .locate-btn.locating { color: #1565c0; animation: dfci-blink 1s steps(2, start) infinite; }
     @keyframes dfci-blink { to { opacity: 0.35; } }
+    /* indice de découverte */
+    #hint {
+      position: absolute; z-index: 1000; left: 50%; bottom: 24px; transform: translateX(-50%);
+      max-width: 88%; text-align: center; pointer-events: none;
+      background: rgba(28, 28, 28, 0.86); color: #fff;
+      font: 500 13px/1.35 system-ui, sans-serif; padding: 8px 15px; border-radius: 20px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); transition: opacity 0.4s;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <div id="hint">Touchez la carte pour lire la coordonnée DFCI</div>
   <script src="vendor/leaflet.js"></script>
   <script src="vendor/proj4.js"></script>
   <script src="dfci.js"></script>

@@ -7,11 +7,13 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 }).addTo(map);
 
+L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
 // --- Grille DFCI ---
 
 const gridLayer = L.layerGroup().addTo(map);
-const LINE_STYLE = { color: '#c62828', weight: 1, opacity: 0.7, interactive: false };
-const SUB_STYLE = { color: '#c62828', weight: 0.8, opacity: 0.45, interactive: false };
+const LINE_STYLE = { color: '#c62828', weight: 1.6, opacity: 0.75, interactive: false };
+const SUB_STYLE = { color: '#c62828', weight: 1.2, opacity: 0.55, interactive: false };
 const SEGMENTS = 8; // points intermédiaires : les lignes Lambert sont courbes en Mercator
 // Découpage du carré de 2 km en 5 zones. Libellés décalés vers l'angle du quadrant.
 const INSET = 380; // m : rapproche les libellés des coins
@@ -111,13 +113,45 @@ redrawGrid();
 
 // --- Clic → coordonnées DFCI ---
 
+const hint = document.getElementById('hint');
+
 map.on('click', (e) => {
+  if (hint) hint.style.opacity = '0';
   const code = DFCI.fromLatLng(e.latlng.lat, e.latlng.lng);
   const content = code
-    ? `<div class="dfci-code">${code}</div><div class="dfci-sub">${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}</div>`
-    : 'Hors zone DFCI';
+    ? `<div class="dfci-code">${code}</div>` +
+      `<div class="dfci-sub">${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}</div>` +
+      `<button class="dfci-copy" onclick="copyDFCI('${code}', this)">Copier la coordonnée</button>`
+    : '<div class="dfci-sub">Hors zone DFCI</div>';
   L.popup().setLatLng(e.latlng).setContent(content).openOn(map);
 });
+
+// Copie de secours quand l'API Clipboard est indisponible (http, iframe, ancien navigateur)
+function legacyCopy(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+window.copyDFCI = (code, btn) => {
+  const ok = () => { btn.textContent = 'Copié ✓'; };
+  const no = () => { btn.textContent = 'Copie impossible'; };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(ok, () => (legacyCopy(code) ? ok() : no()));
+  } else {
+    legacyCopy(code) ? ok() : no();
+  }
+};
 
 // --- Position GPS ---
 
