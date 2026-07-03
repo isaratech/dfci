@@ -4,8 +4,8 @@
   "description": "Carte avec carroyage DFCI : cliquez pour obtenir les coordonnées DFCI d'un point.",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#b71c1c",
+  "background_color": "#f6faff",
+  "theme_color": "#f4503a",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },

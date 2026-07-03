@@ -5,70 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>DFCI viewer</title>
   <meta name="description" content="Carte avec carroyage DFCI : cliquez pour obtenir les coordonnées DFCI d'un point.">
-  <meta name="theme-color" content="#b71c1c">
+  <meta name="theme-color" content="#f4503a">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="vendor/leaflet.css">
   <style>
+    :root {
+      --coral: #f4503a;
+      --coral-dark: #d93c27;
+      --flame: #f6a93b;
+      --slate: #46535f;
+      --slate-soft: #8a97a5;
+      --mist: #f6faff;
+      --lavender: #5a7bf0;
+      --accent: #df004c;
+      --card-shadow: 0 8px 24px rgba(70, 83, 95, 0.16);
+      --font: "Avenir Next", "Nunito Sans", "Segoe UI", system-ui, sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    }
     html, body, #map { height: 100%; margin: 0; }
+    body { font-family: var(--font); background: var(--mist); }
+    #map { background: var(--mist); }
+
+    /* badge de marque */
+    #brand {
+      position: absolute; z-index: 1000; top: 12px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 9px;
+      background: #fff; border-radius: 14px; padding: 7px 14px 7px 9px;
+      box-shadow: var(--card-shadow); pointer-events: none; user-select: none;
+    }
+    #brand svg { display: block; }
+    #brand .brand-name {
+      font-weight: 800; font-size: 16px; letter-spacing: 1.5px; color: var(--slate); line-height: 1.1;
+    }
+    #brand .brand-sub {
+      font-weight: 600; font-size: 10px; color: var(--slate-soft); letter-spacing: 0.3px;
+    }
+
+    /* contrôles Leaflet : cartes blanches arrondies, ombres douces */
+    .leaflet-bar { border: 0 !important; border-radius: 12px; box-shadow: var(--card-shadow) !important; overflow: hidden; }
+    .leaflet-bar a { color: var(--slate); border-bottom-color: #eef2f7 !important; }
+    .leaflet-bar a:hover { background: var(--mist); }
+    .leaflet-control-layers { border: 0 !important; border-radius: 12px !important; box-shadow: var(--card-shadow) !important; color: var(--slate); font-family: var(--font); }
+    .leaflet-control-attribution { background: rgba(255, 255, 255, 0.85) !important; color: var(--slate-soft); border-radius: 8px 0 0 0; font-family: var(--font); }
+    .leaflet-control-attribution a { color: var(--slate); }
+    .leaflet-control-attribution .credit { font-weight: 700; color: var(--slate); text-decoration: none; }
+    .leaflet-control-attribution .credit:hover { color: var(--coral); }
+    .leaflet-control-attribution .heart { color: var(--coral); }
+    .leaflet-control-scale-line { border-color: var(--slate) !important; color: var(--slate); background: rgba(255, 255, 255, 0.7); }
+
+    /* popup */
+    .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: var(--card-shadow); color: var(--slate); font-family: var(--font); }
+
     /* étiquettes de la grille (pastille lisible sur le fond de carte) */
     .dfci-label, .dfci-zone {
-      color: #b71c1c;
-      font: 700 11px/1 ui-monospace, monospace;
+      color: var(--coral-dark);
+      font: 700 11px/1 var(--mono);
       white-space: nowrap;
-      padding: 2px 5px;
-      background: rgba(255, 255, 255, 0.82);
-      border-radius: 5px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 7px;
+      box-shadow: 0 1px 3px rgba(70, 83, 95, 0.22);
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
-    .dfci-zone { font-size: 10px; padding: 1px 4px; }
+    .dfci-zone { font-size: 10px; padding: 1px 5px; }
     /* popup au clic */
-    .dfci-code { font: 700 20px/1.2 ui-monospace, monospace; color: #b71c1c; letter-spacing: 0.5px; }
-    .dfci-sub { color: #666; font-size: 12px; margin-top: 3px; }
+    .dfci-code { font: 800 20px/1.2 var(--mono); color: var(--coral); letter-spacing: 0.5px; }
+    .dfci-sub { color: var(--slate-soft); font-size: 12px; margin-top: 3px; }
     .dfci-copy {
       margin-top: 10px; width: 100%;
-      font: 600 12px/1 system-ui, sans-serif; color: #fff;
-      background: #b71c1c; border: 0; border-radius: 6px; padding: 8px 10px; cursor: pointer;
+      font: 700 12px/1 var(--font); color: #fff;
+      background: var(--coral); border: 0; border-radius: 9px; padding: 9px 10px; cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
     }
-    .dfci-copy:hover { background: #a01818; }
-    .dfci-share { background: #1565c0; }
-    .dfci-share:hover { background: #10509a; }
+    .dfci-copy:hover { background: var(--coral-dark); }
+    .dfci-copy:active { transform: scale(0.98); }
+    .dfci-share { background: var(--slate); }
+    .dfci-share:hover { background: #37424c; }
     /* recherche inverse (code DFCI → case) */
     .dfci-search { background: #fff; }
     .dfci-search form { display: flex; }
     .dfci-search input {
-      width: 150px; border: 0; outline: none; padding: 7px 9px;
-      font: 600 13px/1 ui-monospace, monospace; text-transform: uppercase;
-      background: transparent; border-radius: 4px 0 0 4px;
+      width: 150px; border: 0; outline: none; padding: 8px 10px;
+      font: 700 13px/1 var(--mono); text-transform: uppercase; color: var(--slate);
+      background: transparent; border-radius: 12px 0 0 12px;
     }
-    .dfci-search input.invalid { color: #b71c1c; background: #fdecea; }
+    .dfci-search input::placeholder { color: var(--slate-soft); font-weight: 600; }
+    .dfci-search input:focus-visible { box-shadow: inset 0 0 0 2px var(--flame); }
+    .dfci-search input.invalid { color: var(--accent); background: #fdeaf0; }
     .dfci-search button {
-      border: 0; border-left: 1px solid #ddd; padding: 0 10px; cursor: pointer;
-      font-size: 14px; color: #b71c1c; background: transparent; border-radius: 0 4px 4px 0;
+      border: 0; border-left: 1px solid #eef2f7; padding: 0 11px; cursor: pointer;
+      font-size: 14px; color: var(--coral); background: transparent; border-radius: 0 12px 12px 0;
+      transition: background 0.2s;
     }
-    .dfci-search button:hover { background: #f4f4f4; }
+    .dfci-search button:hover { background: var(--mist); }
     /* position GPS */
-    .dfci-pos { font: 700 12px/1 ui-monospace, monospace; color: #1565c0; }
+    .dfci-pos { font: 700 12px/1 var(--mono); color: var(--lavender); }
     /* bouton localisation */
     .locate-btn { font-size: 18px; }
-    .locate-btn.active { color: #1565c0; }
-    .locate-btn.locating { color: #1565c0; animation: dfci-blink 1s steps(2, start) infinite; }
+    .locate-btn.active { color: var(--lavender); }
+    .locate-btn.locating { color: var(--lavender); animation: dfci-blink 1s steps(2, start) infinite; }
     @keyframes dfci-blink { to { opacity: 0.35; } }
     /* indice de découverte */
     #hint {
       position: absolute; z-index: 1000; left: 50%; bottom: 24px; transform: translateX(-50%);
       max-width: 88%; text-align: center; pointer-events: none;
-      background: rgba(28, 28, 28, 0.86); color: #fff;
-      font: 500 13px/1.35 system-ui, sans-serif; padding: 8px 15px; border-radius: 20px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); transition: opacity 0.4s;
+      background: #fff; color: var(--slate);
+      font: 600 13px/1.35 var(--font); padding: 9px 16px; border-radius: 20px;
+      box-shadow: var(--card-shadow); transition: opacity 0.4s;
     }
+    #hint .heart { color: var(--coral); }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <header id="brand" aria-label="DFCI viewer">
+    <svg width="30" height="30" viewBox="0 0 512 512" aria-hidden="true">
+      <path d="M256 78 L398 160 L398 324 L256 406 L114 324 L114 160 Z"
+            fill="none" stroke="#f4503a" stroke-width="30" stroke-linejoin="round"/>
+      <path d="M262 138c14 52-58 92-58 158a78 78 0 0 0 156 0c0-34-18-59-37-82 5 26-3 41-19 48 11-44-14-84-42-124z"
+            fill="#f6a93b"/>
+    </svg>
+    <div>
+      <div class="brand-name">DFCI</div>
+      <div class="brand-sub">carroyage &amp; coordonnées</div>
+    </div>
+  </header>
   <div id="hint">Touchez la carte pour lire la coordonnée DFCI</div>
   <script src="vendor/leaflet.js"></script>
   <script src="vendor/proj4.js"></script>

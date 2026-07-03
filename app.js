@@ -2,6 +2,11 @@
 
 const map = L.map('map').setView([46.6, 2.6], 6);
 
+// crédit de marque dans l'attribution
+map.attributionControl.setPrefix(
+  '<a class="credit" href="https://gohorus.fr" target="_blank" rel="noopener">Fait avec <span class="heart">❤</span> par Horus</a> · <a href="https://leafletjs.com">Leaflet</a>'
+);
+
 // --- Fonds de carte ---
 
 const GEOPF_WMTS =
@@ -41,8 +46,8 @@ L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
 // --- Grille DFCI ---
 
 const gridLayer = L.layerGroup().addTo(map);
-const LINE_STYLE = { color: '#c62828', weight: 1.6, opacity: 0.75, interactive: false };
-const SUB_STYLE = { color: '#c62828', weight: 1.2, opacity: 0.55, interactive: false };
+const LINE_STYLE = { color: '#f4503a', weight: 1.6, opacity: 0.75, interactive: false };
+const SUB_STYLE = { color: '#f4503a', weight: 1.2, opacity: 0.55, interactive: false };
 const SEGMENTS = 8; // points intermédiaires : les lignes Lambert sont courbes en Mercator
 // Découpage du carré de 2 km en 5 zones. Libellés décalés vers l'angle du quadrant.
 const INSET = 380; // m : rapproche les libellés des coins
@@ -168,7 +173,7 @@ function showDFCI(input) {
   if (!cell) return null;
   clearHighlight();
   highlight = L.polygon(cellOutline(cell.x, cell.y, cell.size), {
-    color: '#f9a825', weight: 3, fillColor: '#f9a825', fillOpacity: 0.18, interactive: false,
+    color: '#f6a93b', weight: 3, fillColor: '#f6a93b', fillOpacity: 0.18, interactive: false,
   }).addTo(map);
   map.setView(DFCI.toLatLng(cell.x + cell.size / 2, cell.y + cell.size / 2), zoomForSize(cell.size));
   if (hint) hint.style.opacity = '0';
@@ -324,8 +329,8 @@ map.on('locationfound', (e) => {
     map.setView(e.latlng, Math.max(map.getZoom(), 15));
   }
   if (!posMarker) {
-    posMarker = L.circleMarker(e.latlng, { radius: 7, color: '#fff', weight: 2, fillColor: '#1565c0', fillOpacity: 1 }).addTo(map);
-    accCircle = L.circle(e.latlng, { radius: e.accuracy, color: '#1565c0', weight: 1, fillOpacity: 0.1, interactive: false }).addTo(map);
+    posMarker = L.circleMarker(e.latlng, { radius: 7, color: '#fff', weight: 2, fillColor: '#5a7bf0', fillOpacity: 1 }).addTo(map);
+    accCircle = L.circle(e.latlng, { radius: e.accuracy, color: '#5a7bf0', weight: 1, fillOpacity: 0.1, interactive: false }).addTo(map);
     posMarker.bindTooltip('', { permanent: true, direction: 'top', offset: [0, -8], className: 'dfci-pos' });
   }
   posMarker.setLatLng(e.latlng);
