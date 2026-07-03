@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>DFCI viewer</title>
+  <meta name="description" content="Carte avec carroyage DFCI : cliquez pour obtenir les coordonnées DFCI d'un point.">
+  <meta name="theme-color" content="#b71c1c">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .dfci-label {
+      color: #b71c1c;
+      font: 700 11px/1 ui-monospace, monospace;
+      text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .dfci-zone {
+      color: #b71c1c;
+      opacity: 0.7;
+      font: 700 13px/1 ui-monospace, monospace;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .dfci-code { font: 700 18px/1.4 ui-monospace, monospace; }
+    .dfci-sub { color: #666; font-size: 12px; }
+    .dfci-pos { font: 700 12px/1 ui-monospace, monospace; }
+    .locate-btn { font-size: 18px; }
+    .locate-btn.active { color: #1565c0; }
+    .locate-btn.locating { color: #1565c0; animation: dfci-blink 1s steps(2, start) infinite; }
+    @keyframes dfci-blink { to { opacity: 0.35; } }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="vendor/leaflet.js"></script>
+  <script src="vendor/proj4.js"></script>
+  <script src="dfci.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
