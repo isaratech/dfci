@@ -13,27 +13,41 @@ const gridLayer = L.layerGroup().addTo(map);
 const LINE_STYLE = { color: '#c62828', weight: 1, opacity: 0.7, interactive: false };
 const SUB_STYLE = { color: '#c62828', weight: 0.8, opacity: 0.45, interactive: false };
 const SEGMENTS = 8; // points intermédiaires : les lignes Lambert sont courbes en Mercator
-// Découpage du carré de 2 km en 5 zones : [décalage X, décalage Y, chiffre]
-const ZONES = [[500, 1500, '1'], [1500, 1500, '2'], [1500, 500, '3'], [500, 500, '4'], [1000, 1000, '5']];
+// Découpage du carré de 2 km en 5 zones. Libellés décalés vers l'angle du quadrant.
+const INSET = 380; // m : rapproche les libellés des coins
+const ZONES = [
+  [INSET, 2000 - INSET, '1'],        // NO
+  [2000 - INSET, 2000 - INSET, '2'], // NE
+  [2000 - INSET, INSET, '3'],        // SE
+  [INSET, INSET, '4'],               // SO
+  [1000, 1000, '5'],                 // centre
+];
 
 function stepForZoom(z) {
   return z >= 12 ? 2000 : z >= 9 ? 20000 : 100000;
 }
 
-// Sous-découpage d'un carré de 2 km : croix (4 quadrants) + carré central (zone 5)
+// Sous-découpage d'un carré de 2 km : croix (4 quadrants) + carré central (zone 5),
+// chaque zone étiquetée avec sa coordonnée DFCI complète (ex. KD40D7.1)
 function drawSubdivisions(minX, maxX, minY, maxY) {
   for (let x = minX; x < maxX; x += 2000) {
     for (let y = minY; y < maxY; y += 2000) {
-      gridLayer.addLayer(L.polyline([DFCI.toLatLng(x + 1000, y), DFCI.toLatLng(x + 1000, y + 2000)], SUB_STYLE));
-      gridLayer.addLayer(L.polyline([DFCI.toLatLng(x, y + 1000), DFCI.toLatLng(x + 2000, y + 1000)], SUB_STYLE));
+      const code = DFCI.cellLabel(x + 1000, y + 1000, 2000);
+      if (!code) continue;
+      // croix en 4 branches, chacune s'arrêtant au carré central (à 500 m du bord)
+      gridLayer.addLayer(L.polyline([DFCI.toLatLng(x + 1000, y), DFCI.toLatLng(x + 1000, y + 500)], SUB_STYLE));
+      gridLayer.addLayer(L.polyline([DFCI.toLatLng(x + 1000, y + 1500), DFCI.toLatLng(x + 1000, y + 2000)], SUB_STYLE));
+      gridLayer.addLayer(L.polyline([DFCI.toLatLng(x, y + 1000), DFCI.toLatLng(x + 500, y + 1000)], SUB_STYLE));
+      gridLayer.addLayer(L.polyline([DFCI.toLatLng(x + 1500, y + 1000), DFCI.toLatLng(x + 2000, y + 1000)], SUB_STYLE));
+      // carré central : contour seul, sans remplissage
       gridLayer.addLayer(L.polygon([
         DFCI.toLatLng(x + 500, y + 500), DFCI.toLatLng(x + 1500, y + 500),
         DFCI.toLatLng(x + 1500, y + 1500), DFCI.toLatLng(x + 500, y + 1500),
-      ], SUB_STYLE));
+      ], { ...SUB_STYLE, fill: false }));
       for (const [dx, dy, d] of ZONES) {
         gridLayer.addLayer(L.marker(DFCI.toLatLng(x + dx, y + dy), {
           interactive: false,
-          icon: L.divIcon({ className: 'dfci-zone', html: d, iconSize: null }),
+          icon: L.divIcon({ className: 'dfci-zone', html: code + '.' + d, iconSize: null }),
         }));
       }
     }
@@ -76,16 +90,14 @@ function redrawGrid() {
 
   const cells = ((maxX - minX) / step) * ((maxY - minY) / step);
   if (cells > 400) return; // ponytail: pas d'étiquettes quand la vue en contient trop
-  const sub = step === 2000 && map.getZoom() >= 14;
-  if (sub) drawSubdivisions(minX, maxX, minY, maxY);
+  // au zoom fin, chaque quadrant affiche déjà sa coordonnée complète : pas de label 2 km séparé
+  if (step === 2000 && map.getZoom() >= 14) { drawSubdivisions(minX, maxX, minY, maxY); return; }
   for (let x = minX; x < maxX; x += step) {
     for (let y = minY; y < maxY; y += step) {
       const label = DFCI.cellLabel(x + step / 2, y + step / 2, step);
       if (!label) continue;
-      // sous-découpage visible : code 2 km en haut du carré, pour ne pas masquer la zone 5
-      const at = sub ? DFCI.toLatLng(x + step / 2, y + step - 150) : DFCI.toLatLng(x + step / 2, y + step / 2);
       gridLayer.addLayer(
-        L.marker(at, {
+        L.marker(DFCI.toLatLng(x + step / 2, y + step / 2), {
           interactive: false,
           icon: L.divIcon({ className: 'dfci-label', html: label, iconSize: null }),
         })
