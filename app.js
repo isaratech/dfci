@@ -19,7 +19,7 @@ const baseLayers = {
   }),
   'SCAN 25 IGN': L.tileLayer(
     GEOPF_WMTS.replace('/wmts?', '/private/wmts?') +
-      '&LAYER=GEOGRAPHICALGRIDSYSTEMS.SCAN25TOUR&FORMAT=image/jpeg&apikey=ign_scan_ws',
+      '&LAYER=GEOGRAPHICALGRIDSYSTEMS.MAPS.SCAN25TOUR&FORMAT=image/jpeg&apikey=ign_scan_ws',
     {
       minZoom: 6,
       maxZoom: 16,

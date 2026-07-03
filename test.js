@@ -15,7 +15,8 @@ assert.strictEqual(DFCI.cellLabel(...DFCI.toLambert(44.671123, 1.277227), 2000),
 const cell = DFCI.dfciToLambert('FE06H1.2');
 assert.strictEqual(cell.code, 'FE06H1.2');
 assert.strictEqual(cell.size, 1000);
-assert.strictEqual(DFCI.dfciFromLambert(cell.x + 250, cell.y + 250), 'FE06H1.2');
+// point du coin NE du quadrant (le centre du quadrant chevauche la zone 5)
+assert.strictEqual(DFCI.dfciFromLambert(cell.x + 750, cell.y + 750), 'FE06H1.2');
 const [x0, y0] = DFCI.toLambert(44.671123, 1.277227);
 assert.ok(x0 >= cell.x && x0 < cell.x + cell.size && y0 >= cell.y && y0 < cell.y + cell.size);
 

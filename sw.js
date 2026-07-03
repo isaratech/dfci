@@ -1,6 +1,6 @@
 // Cache de l'app shell uniquement ; les tuiles OSM restent en réseau
 // (politique d'usage OSM + cache HTTP du navigateur).
-const CACHE = 'dfci-v5';
+const CACHE = 'dfci-v6';
 const ASSETS = [
   '.',
   'index.html',
@@ -27,5 +27,6 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request)));
+  // ignoreSearch : les liens partagés (?c=CODE) doivent servir l'app shell hors-ligne
+  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request)));
 });
