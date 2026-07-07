@@ -2,12 +2,12 @@
 
 const map = L.map('map').setView([46.6, 2.6], 6);
 
-// crédit de marque dans l'attribution
+// brand credit in the attribution
 map.attributionControl.setPrefix(
   '<a class="credit" href="https://gohorus.fr" target="_blank" rel="noopener">Fait avec <span class="heart">❤</span> par Horus</a> · <a href="https://leafletjs.com">Leaflet</a>'
 );
 
-// --- Fonds de carte ---
+// --- Base layers ---
 
 const GEOPF_WMTS =
   'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0' +
@@ -43,39 +43,39 @@ L.control.layers(baseLayers, null, { position: 'topright' }).addTo(map);
 
 L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
 
-// --- Grille DFCI ---
+// --- DFCI grid ---
 
 const gridLayer = L.layerGroup().addTo(map);
-const LINE_STYLE = { color: '#f4503a', weight: 1.6, opacity: 0.75, interactive: false };
-const SUB_STYLE = { color: '#f4503a', weight: 1.2, opacity: 0.55, interactive: false };
-const SEGMENTS = 8; // points intermédiaires : les lignes Lambert sont courbes en Mercator
-// Découpage du carré de 2 km en 5 zones. Libellés décalés vers l'angle du quadrant.
-const INSET = 380; // m : rapproche les libellés des coins
+const LINE_STYLE = { color: '#f4503a', weight: 2.4, opacity: 0.75, interactive: false };
+const SUB_STYLE = { color: '#f4503a', weight: 1.8, opacity: 0.55, interactive: false };
+const SEGMENTS = 8; // intermediate points: Lambert lines are curved in Mercator
+// Split of the 2 km square into 5 zones. Labels shifted towards the quadrant corner.
+const INSET = 380; // m: moves the labels closer to the corners
 const ZONES = [
-  [INSET, 2000 - INSET, '1'],        // NO
+  [INSET, 2000 - INSET, '1'],        // NW
   [2000 - INSET, 2000 - INSET, '2'], // NE
   [2000 - INSET, INSET, '3'],        // SE
-  [INSET, INSET, '4'],               // SO
-  [1000, 1000, '5'],                 // centre
+  [INSET, INSET, '4'],               // SW
+  [1000, 1000, '5'],                 // center
 ];
 
 function stepForZoom(z) {
   return z >= 12 ? 2000 : z >= 9 ? 20000 : 100000;
 }
 
-// Sous-découpage d'un carré de 2 km : croix (4 quadrants) + carré central (zone 5),
-// chaque zone étiquetée avec sa coordonnée DFCI complète (ex. KD40D7.1)
+// Subdivision of a 2 km square: cross (4 quadrants) + central square (zone 5),
+// each zone labeled with its full DFCI coordinate (e.g. KD40D7.1)
 function drawSubdivisions(minX, maxX, minY, maxY) {
   for (let x = minX; x < maxX; x += 2000) {
     for (let y = minY; y < maxY; y += 2000) {
       const code = DFCI.cellLabel(x + 1000, y + 1000, 2000);
       if (!code) continue;
-      // croix en 4 branches, chacune s'arrêtant au carré central (à 500 m du bord)
+      // cross with 4 arms, each stopping at the central square (500 m from the edge)
       gridLayer.addLayer(L.polyline([DFCI.toLatLng(x + 1000, y), DFCI.toLatLng(x + 1000, y + 500)], SUB_STYLE));
       gridLayer.addLayer(L.polyline([DFCI.toLatLng(x + 1000, y + 1500), DFCI.toLatLng(x + 1000, y + 2000)], SUB_STYLE));
       gridLayer.addLayer(L.polyline([DFCI.toLatLng(x, y + 1000), DFCI.toLatLng(x + 500, y + 1000)], SUB_STYLE));
       gridLayer.addLayer(L.polyline([DFCI.toLatLng(x + 1500, y + 1000), DFCI.toLatLng(x + 2000, y + 1000)], SUB_STYLE));
-      // carré central : contour seul, sans remplissage
+      // central square: outline only, no fill
       gridLayer.addLayer(L.polygon([
         DFCI.toLatLng(x + 500, y + 500), DFCI.toLatLng(x + 1500, y + 500),
         DFCI.toLatLng(x + 1500, y + 1500), DFCI.toLatLng(x + 500, y + 1500),
@@ -95,7 +95,7 @@ function redrawGrid() {
   const step = stepForZoom(map.getZoom());
   const b = map.getBounds();
 
-  // Emprise Lambert de la vue, échantillonnée sur le pourtour
+  // Lambert extent of the view, sampled along the perimeter
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
   for (let i = 0; i <= 4; i++) {
     const lng = b.getWest() + ((b.getEast() - b.getWest()) * i) / 4;
@@ -125,8 +125,8 @@ function redrawGrid() {
   }
 
   const cells = ((maxX - minX) / step) * ((maxY - minY) / step);
-  if (cells > 400) return; // ponytail: pas d'étiquettes quand la vue en contient trop
-  // au zoom fin, chaque quadrant affiche déjà sa coordonnée complète : pas de label 2 km séparé
+  if (cells > 400) return; // ponytail: no labels when the view contains too many
+  // at fine zoom, each quadrant already shows its full coordinate: no separate 2 km label
   if (step === 2000 && map.getZoom() >= 14) { drawSubdivisions(minX, maxX, minY, maxY); return; }
   for (let x = minX; x < maxX; x += step) {
     for (let y = minY; y < maxY; y += step) {
@@ -145,7 +145,7 @@ function redrawGrid() {
 map.on('moveend zoomend', redrawGrid);
 redrawGrid();
 
-// --- Recherche inverse : code DFCI → case surlignée ---
+// --- Reverse search: DFCI code → highlighted cell ---
 
 let highlight = null;
 
@@ -153,7 +153,7 @@ function clearHighlight() {
   if (highlight) { map.removeLayer(highlight); highlight = null; }
 }
 
-// Contour de la case en Lambert, échantillonné (les côtés sont courbes en Mercator)
+// Cell outline in Lambert, sampled (the sides are curved in Mercator)
 function cellOutline(x, y, size) {
   const pts = [];
   for (let j = 0; j < SEGMENTS; j++) pts.push(DFCI.toLatLng(x + (size * j) / SEGMENTS, y));
@@ -167,7 +167,7 @@ function zoomForSize(size) {
   return size <= 1000 ? 15 : size <= 2000 ? 14 : size <= 20000 ? 11 : 8;
 }
 
-// Centre la carte sur la case décodée et la surligne. Renvoie le code normalisé ou null.
+// Centers the map on the decoded cell and highlights it. Returns the normalized code or null.
 function showDFCI(input) {
   const cell = DFCI.dfciToLambert(input);
   if (!cell) return null;
@@ -211,7 +211,7 @@ searchForm.addEventListener('submit', (e) => {
   }
 });
 
-// --- Clic → coordonnées DFCI ---
+// --- Click → DFCI coordinates ---
 
 const hint = document.getElementById('hint');
 
@@ -227,7 +227,7 @@ map.on('click', (e) => {
   L.popup().setLatLng(e.latlng).setContent(content).openOn(map);
 });
 
-// Copie de secours quand l'API Clipboard est indisponible (http, iframe, ancien navigateur)
+// Fallback copy when the Clipboard API is unavailable (http, iframe, old browser)
 function legacyCopy(text) {
   try {
     const ta = document.createElement('textarea');
@@ -254,7 +254,7 @@ window.copyDFCI = (code, btn) => {
   }
 };
 
-// --- Partage de position (Web Share, repli : copie du lien) ---
+// --- Position sharing (Web Share, fallback: copy the link) ---
 
 function shareURL(code) {
   return location.origin + location.pathname + '?c=' + encodeURIComponent(code);
@@ -277,7 +277,7 @@ window.shareDFCI = (code, lat, lng, btn) => {
   }
 };
 
-// --- Paramètres d'URL : ?c=KD42F7.5 centre la carte sur la case ---
+// --- URL parameters: ?c=KD42F7.5 centers the map on the cell ---
 
 const urlCode = new URLSearchParams(location.search).get('c');
 if (urlCode) {
@@ -285,7 +285,7 @@ if (urlCode) {
   if (code && searchInput) searchInput.value = code;
 }
 
-// --- Position GPS ---
+// --- GPS position ---
 
 let watching = false;
 let firstFix = false;
@@ -314,7 +314,7 @@ locateCtl.onAdd = () => {
     watching = true;
     firstFix = true;
     btn.className = 'locate-btn locating';
-    // setView géré manuellement (uniquement au 1er fix) pour ne pas recentrer à chaque mise à jour
+    // setView handled manually (only on the 1st fix) to avoid recentering on every update
     map.locate({ watch: true, enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
   });
   return div;

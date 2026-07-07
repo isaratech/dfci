@@ -1,22 +1,22 @@
-// Carroyage DFCI — grille kilométrique en Lambert II étendu (EPSG:27572).
-// Découpage : carrés de 100 km (2 lettres, sans I ni J), 20 km (2 chiffres pairs),
-// 2 km (lettre + chiffre), puis carré de 2 km découpé en 5 zones
-// (1=NO, 2=NE, 3=SE, 4=SO, 5=centre).
+// DFCI grid — kilometric grid in extended Lambert II (EPSG:27572).
+// Breakdown: 100 km squares (2 letters, without I or J), 20 km (2 even digits),
+// 2 km (letter + digit), then the 2 km square split into 5 zones
+// (1=NW, 2=NE, 3=SE, 4=SW, 5=center).
 /* global proj4 */
 
 const LAMBERT_2E =
   '+proj=lcc +lat_1=46.8 +lat_0=46.8 +lon_0=0 +k_0=0.99987742 ' +
   '+x_0=600000 +y_0=2200000 +a=6378249.2 +b=6356515 ' +
-  '+towgs84=-168,-60,320 +pm=paris +units=m +no_defs'; // ponytail: towgs84 à 6 zéros → NaN avec proj4js, la forme à 3 paramètres suffit (NTF)
+  '+towgs84=-168,-60,320 +pm=paris +units=m +no_defs'; // ponytail: towgs84 with 6 zeros → NaN with proj4js, the 3-parameter form is enough (NTF)
 
 const LETTERS_100 = 'ABCDEFGHKLMN';
 const LETTERS_2 = 'ABCDEFGHKL';
 
-// Zone de validité du carroyage (France métropolitaine)
+// Validity area of the grid (metropolitan France)
 const BOUNDS = { minX: 0, maxX: 1200000, minY: 1600000, maxY: 2700000 };
 
 function toLambert(lat, lng) {
-  return proj4(LAMBERT_2E, [lng, lat]); // [x, y] en mètres
+  return proj4(LAMBERT_2E, [lng, lat]); // [x, y] in meters
 }
 
 function toLatLng(x, y) {
@@ -48,9 +48,9 @@ function fromLatLng(lat, lng) {
   return dfciFromLambert(x, y);
 }
 
-// Décodage d'un code DFCI, complet ou partiel (AA, AA00, AA00A0, AA00A0.5).
-// Renvoie { code, x, y, size } : code normalisé, coin sud-ouest Lambert et côté
-// de la case en mètres (le quadrant 1-5 correspond à une case de 1 km), ou null.
+// Decoding of a DFCI code, full or partial (AA, AA00, AA00A0, AA00A0.5).
+// Returns { code, x, y, size }: normalized code, Lambert south-west corner and side
+// of the cell in meters (quadrant 1-5 corresponds to a 1 km cell), or null.
 function dfciToLambert(input) {
   const s = String(input).toUpperCase().replace(/[\s.]/g, '');
   const m = /^([A-Z])([A-Z])(?:(\d)(\d)(?:([A-Z])(\d)([1-5])?)?)?$/.exec(s);
@@ -63,7 +63,7 @@ function dfciToLambert(input) {
   let size = 100000;
   let code = m[1] + m[2];
   if (m[3]) {
-    if (m[3] % 2 || m[4] % 2) return null; // pas de 20 km : chiffres pairs uniquement
+    if (m[3] % 2 || m[4] % 2) return null; // 20 km step: even digits only
     x += (m[3] / 2) * 20000;
     y += (m[4] / 2) * 20000;
     size = 20000;
@@ -78,7 +78,7 @@ function dfciToLambert(input) {
     code += m[5] + m[6];
   }
   if (m[7]) {
-    const q = +m[7]; // 1=NO, 2=NE, 3=SE, 4=SO, 5=centre
+    const q = +m[7]; // 1=NW, 2=NE, 3=SE, 4=SW, 5=center
     size = 1000;
     if (q === 5) { x += 500; y += 500; }
     else { x += q === 2 || q === 3 ? 1000 : 0; y += q === 1 || q === 2 ? 1000 : 0; }
@@ -87,7 +87,7 @@ function dfciToLambert(input) {
   return { code, x, y, size };
 }
 
-// Étiquette d'une cellule de la grille selon son pas (100 km, 20 km ou 2 km)
+// Label of a grid cell according to its step (100 km, 20 km or 2 km)
 function cellLabel(cx, cy, step) {
   const code = dfciFromLambert(cx, cy);
   if (!code) return null;

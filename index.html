@@ -28,7 +28,7 @@
     body { font-family: var(--font); background: var(--mist); }
     #map { background: var(--mist); }
 
-    /* badge de marque */
+    /* brand badge */
     #brand {
       position: absolute; z-index: 1000; top: 12px; left: 50%; transform: translateX(-50%);
       display: flex; align-items: center; gap: 9px;
@@ -43,7 +43,7 @@
       font-weight: 600; font-size: 10px; color: var(--slate-soft); letter-spacing: 0.3px;
     }
 
-    /* contrôles Leaflet : cartes blanches arrondies, ombres douces */
+    /* Leaflet controls: rounded white cards, soft shadows */
     .leaflet-bar { border: 0 !important; border-radius: 12px; box-shadow: var(--card-shadow) !important; overflow: hidden; }
     .leaflet-bar a { color: var(--slate); border-bottom-color: #eef2f7 !important; }
     .leaflet-bar a:hover { background: var(--mist); }
@@ -58,7 +58,7 @@
     /* popup */
     .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: var(--card-shadow); color: var(--slate); font-family: var(--font); }
 
-    /* étiquettes de la grille (pastille lisible sur le fond de carte) */
+    /* grid labels (readable chip over the basemap) */
     .dfci-label, .dfci-zone {
       color: var(--coral-dark);
       font: 700 11px/1 var(--mono);
@@ -71,7 +71,7 @@
       pointer-events: none;
     }
     .dfci-zone { font-size: 10px; padding: 1px 5px; }
-    /* popup au clic */
+    /* click popup */
     .dfci-code { font: 800 20px/1.2 var(--mono); color: var(--coral); letter-spacing: 0.5px; }
     .dfci-sub { color: var(--slate-soft); font-size: 12px; margin-top: 3px; }
     .dfci-copy {
@@ -84,7 +84,7 @@
     .dfci-copy:active { transform: scale(0.98); }
     .dfci-share { background: var(--slate); }
     .dfci-share:hover { background: #37424c; }
-    /* recherche inverse (code DFCI → case) */
+    /* reverse search (DFCI code → cell) */
     .dfci-search { background: #fff; }
     .dfci-search form { display: flex; }
     .dfci-search input {
@@ -101,14 +101,14 @@
       transition: background 0.2s;
     }
     .dfci-search button:hover { background: var(--mist); }
-    /* position GPS */
+    /* GPS position */
     .dfci-pos { font: 700 12px/1 var(--mono); color: var(--lavender); }
-    /* bouton localisation */
+    /* locate button */
     .locate-btn { font-size: 18px; }
     .locate-btn.active { color: var(--lavender); }
     .locate-btn.locating { color: var(--lavender); animation: dfci-blink 1s steps(2, start) infinite; }
     @keyframes dfci-blink { to { opacity: 0.35; } }
-    /* indice de découverte */
+    /* discovery hint */
     #hint {
       position: absolute; z-index: 1000; left: 50%; bottom: 24px; transform: translateX(-50%);
       max-width: 88%; text-align: center; pointer-events: none;
