@@ -35,7 +35,7 @@
       background: #fff; border-radius: 14px; padding: 7px 14px 7px 9px;
       box-shadow: var(--card-shadow); pointer-events: none; user-select: none;
     }
-    #brand svg { display: block; }
+    #brand img { display: block; width: 30px; height: 30px; }
     #brand .brand-name {
       font-weight: 800; font-size: 16px; letter-spacing: 1.5px; color: var(--slate); line-height: 1.1;
     }
@@ -106,7 +106,7 @@
     /* install button */
     .install-btn { color: var(--coral) !important; }
     /* locate button */
-    .locate-btn { display: flex; align-items: center; justify-content: center; }
+    .leaflet-bar a.locate-btn { display: flex; align-items: center; justify-content: center; }
     .locate-btn svg { display: block; }
     .locate-btn.active { color: var(--lavender); }
     .locate-btn.locating { color: var(--lavender); animation: dfci-pulse 1.2s ease-in-out infinite; }
@@ -125,12 +125,7 @@
 <body>
   <div id="map"></div>
   <header id="brand" aria-label="DFCI viewer">
-    <svg width="30" height="30" viewBox="0 0 512 512" aria-hidden="true">
-      <path d="M256 78 L398 160 L398 324 L256 406 L114 324 L114 160 Z"
-            fill="none" stroke="#f4503a" stroke-width="30" stroke-linejoin="round"/>
-      <path d="M262 138c14 52-58 92-58 158a78 78 0 0 0 156 0c0-34-18-59-37-82 5 26-3 41-19 48 11-44-14-84-42-124z"
-            fill="#f6a93b"/>
-    </svg>
+    <img src="icon.svg" alt="" aria-hidden="true">
     <div>
       <div class="brand-name">DFCI</div>
       <div class="brand-sub">carroyage &amp; coordonnées</div>
