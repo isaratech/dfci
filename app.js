@@ -346,4 +346,52 @@ map.on('locationerror', (e) => {
 
 // --- PWA ---
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch((err) => console.error('SW registration failed:', err));
+}
+
+// Install button: Chrome no longer shows an automatic banner (beforeinstallprompt
+// must be handled manually) and iOS Safari has no prompt at all.
+const isStandalone =
+  window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+let installPrompt = null;
+let installBtn = null;
+
+const installCtl = L.control({ position: 'topleft' });
+installCtl.onAdd = () => {
+  const div = L.DomUtil.create('div', 'leaflet-bar install-ctl');
+  installBtn = L.DomUtil.create('a', 'install-btn', div);
+  installBtn.href = '#';
+  installBtn.title = "Installer l'application";
+  installBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 3v11"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>';
+  L.DomEvent.on(installBtn, 'click', async (e) => {
+    L.DomEvent.stop(e);
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      installPrompt = null;
+      if (outcome === 'accepted') hideInstallBtn();
+    } else if (isIOS) {
+      alert("Pour installer l'application :\n\n1. Touchez le bouton Partager (carré avec une flèche)\n2. Choisissez « Sur l'écran d'accueil »");
+    }
+  });
+  return div;
+};
+
+function hideInstallBtn() {
+  if (installBtn) installBtn.parentElement.style.display = 'none';
+}
+
+if (!isStandalone) {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt = e;
+    if (!installBtn) installCtl.addTo(map);
+  });
+  // iOS never fires beforeinstallprompt: always offer the button with instructions
+  if (isIOS) installCtl.addTo(map);
+  window.addEventListener('appinstalled', hideInstallBtn);
+}

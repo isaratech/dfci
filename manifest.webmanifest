@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "DFCI viewer",
   "short_name": "DFCI",
   "description": "Carte avec carroyage DFCI : cliquez pour obtenir les coordonnées DFCI d'un point.",

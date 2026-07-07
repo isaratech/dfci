@@ -1,6 +1,6 @@
 // Cache the app shell only; OSM tiles stay on the network
 // (OSM usage policy + browser HTTP cache).
-const CACHE = 'dfci-v7';
+const CACHE = 'dfci-v8';
 const ASSETS = [
   '.',
   'index.html',
