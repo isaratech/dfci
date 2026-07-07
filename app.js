@@ -1,6 +1,6 @@
 /* global L, DFCI */
 
-const map = L.map('map').setView([46.6, 2.6], 6);
+const map = L.map('map', { minZoom: 5 }).setView([46.6, 2.6], 6);
 
 // brand credit in the attribution
 map.attributionControl.setPrefix(
@@ -361,7 +361,7 @@ const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
 let installPrompt = null;
 let installBtn = null;
 
-const installCtl = L.control({ position: 'topleft' });
+const installCtl = L.control({ position: 'bottomright' });
 installCtl.onAdd = () => {
   const div = L.DomUtil.create('div', 'leaflet-bar install-ctl');
   installBtn = L.DomUtil.create('a', 'install-btn', div);
