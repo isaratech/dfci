@@ -106,10 +106,11 @@
     /* install button */
     .install-btn { color: var(--coral) !important; }
     /* locate button */
-    .locate-btn { font-size: 18px; }
+    .locate-btn { display: flex; align-items: center; justify-content: center; }
+    .locate-btn svg { display: block; }
     .locate-btn.active { color: var(--lavender); }
-    .locate-btn.locating { color: var(--lavender); animation: dfci-blink 1s steps(2, start) infinite; }
-    @keyframes dfci-blink { to { opacity: 0.35; } }
+    .locate-btn.locating { color: var(--lavender); animation: dfci-pulse 1.2s ease-in-out infinite; }
+    @keyframes dfci-pulse { 50% { opacity: 0.35; } }
     /* discovery hint */
     #hint {
       position: absolute; z-index: 1000; left: 50%; bottom: 24px; transform: translateX(-50%);
